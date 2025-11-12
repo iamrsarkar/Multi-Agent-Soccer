@@ -74,3 +74,136 @@ Where:
 ## 🧠 Architecture
 
 ### Training Flow
+
+
+┌───────────────────────────────────────────────┐
+│ Initialize environment (PettingZoo/Unity) │
+├───────────────────────────────────────────────┤
+│ For each episode: │
+│ • Agents observe environment │
+│ • Take actions using current policy │
+│ • Environment updates game state │
+│ • Compute rewards for all agents │
+│ • Store experiences (state, action, reward) │
+│ • Update policies via PPO or League strategy │
+└───────────────────────────────────────────────┘
+
+
+### Directory Structure
+
+
+├── envs/ # Game environments (PettingZoo or Unity)
+│ ├── soccer_env.py
+│ ├── capture_flag_env.py
+│ └── pong_team_env.py
+├── agents/ # RL agent implementations
+│ ├── ppo_agent.py
+│ ├── selfplay_manager.py
+│ └── centralized_critic.py
+├── training/ # Training & evaluation loops
+│ ├── train_selfplay.py
+│ └── league_training.py
+├── results/ # Logs, graphs, and replay files
+├── models/ # Trained checkpoints
+└── main.py # Entry point
+
+
+---
+
+## 🧩 Frameworks & Libraries
+
+- 🧠 **Reinforcement Learning:** PyTorch, Stable-Baselines3, RLlib  
+- 🕹️ **Simulation Environments:** PettingZoo, Gymnasium, Unity ML-Agents  
+- 📊 **Visualization:** Matplotlib, TensorBoard  
+- ⚙️ **Physics (optional):** PyBullet or Mujoco  
+
+---
+
+## 📈 Evaluation Metrics
+
+| Metric | Description |
+|---------|--------------|
+| **Win Rate** | % of matches won by agent/team |
+| **Goal Difference** | Average goals scored − conceded |
+| **Average Reward** | Mean episode reward |
+| **Policy Entropy** | Diversity in learned strategies |
+| **Training Stability** | Reward variance across episodes |
+
+---
+
+## 🎮 Experiments
+
+| Experiment | Goal | Setup |
+|-------------|------|-------|
+| 1 | Train 1v1 Self-Play PPO | Baseline |
+| 2 | Add Team Coordination (2v2 Soccer) | Shared rewards |
+| 3 | League Training with Evolving Opponents | AlphaStar-style |
+| 4 | Curriculum Difficulty (Easy → Hard Maps) | Progressive learning |
+
+---
+
+## 🚀 How to Run
+
+### 1️⃣ Install Dependencies
+```bash
+conda create -n marl_game python=3.10
+conda activate marl_game
+pip install torch gymnasium pettingzoo stable-baselines3 matplotlib
+
+2️⃣ Train Agent
+python main.py --env soccer --algo selfplay_ppo --episodes 10000
+
+3️⃣ Evaluate Policy
+python evaluate.py --model models/soccer_ppo_final.pth
+
+4️⃣ Visualize Results
+python visualize.py --env soccer
+
+📊 Visualization
+
+Training Curves (Average Reward, Win Rate)
+
+Agent Trajectories
+
+Replay Videos (if using Unity ML-Agents)
+
+🧩 Research Extensions
+
+Add Graph Neural Networks (GNN) for agent communication.
+
+Explore Opponent Modeling (explicit opponent policy prediction).
+
+Combine Self-Play + Imitation Learning (for human-like strategies).
+
+Integrate League ELO rating for opponent matchmaking.
+
+📚 References
+
+Silver et al., “Mastering the Game of Go with Deep Neural Networks and Tree Search,” Nature, 2016.
+
+Vinyals et al., “Grandmaster Level in StarCraft II using Multi-Agent Reinforcement Learning,” Nature, 2019 (AlphaStar).
+
+PettingZoo: Multi-Agent Reinforcement Learning Environment Library.
+
+Schulman et al., “Proximal Policy Optimization (PPO),” 2017.
+
+👨‍💻 Contributors
+
+Ronak Sarkar – Project Lead, Multi-Agent RL Researcher
+
+Group RR – Team Members (Radheshyam Routh, Ronak Sarkar)
+
+MSc Big Data Analytics, RKMVERI (2024–2026)
+
+🪙 License
+
+MIT License © 2025 Ronak Sarkar
+You are free to use, modify, and distribute this code with proper attribution.
+
+🖼️ Example Simulation Snapshot
+
+
+---
+
+Would you like me to **generate this README.md file (downloadable)** or also create the **project folder structure with stub `.py` files** so you can directly initialize it as a GitHub repo (with working placeholders for PettingZoo + PPO integration)?
+
