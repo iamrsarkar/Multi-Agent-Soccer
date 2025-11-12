@@ -12,7 +12,9 @@ from agents.ppo_agent import ActorConfig, PPOAgent
 from envs.soccer_env import SoccerEnv, SoccerEnvConfig
 
 
-def run_episode(env: SoccerEnv, actor: PPOAgent | None, deterministic: bool = True) -> Dict[str, List[Tuple[int, int]]]:
+def run_episode(
+    env: SoccerEnv, actor: PPOAgent | None, deterministic: bool = True, render: bool = False
+) -> Dict[str, List[Tuple[int, int]]]:
     observations, _ = env.reset()
     possible_agents = env.possible_agents
     trajectories: Dict[str, List[Tuple[int, int]]] = {agent: [] for agent in possible_agents}
@@ -33,6 +35,8 @@ def run_episode(env: SoccerEnv, actor: PPOAgent | None, deterministic: bool = Tr
         for agent in possible_agents:
             if agent in env._positions:  # type: ignore[attr-defined]
                 trajectories[agent].append(env._positions[agent])  # type: ignore[attr-defined]
+        if render:
+            env.render()
     return trajectories
 
 
@@ -56,7 +60,7 @@ def plot_trajectories(trajectories: Dict[str, List[Tuple[int, int]]], grid_shape
     plt.show()
 
 
-def visualise(model_path: Path | None, cfg: SoccerEnvConfig) -> None:
+def visualise(model_path: Path | None, cfg: SoccerEnvConfig, render: bool) -> None:
     env = SoccerEnv(cfg)
     actor: PPOAgent | None = None
     if model_path is not None:
@@ -67,21 +71,23 @@ def visualise(model_path: Path | None, cfg: SoccerEnvConfig) -> None:
         actor = PPOAgent(actor_cfg, device=device)
         state_dict = torch.load(model_path, map_location=device)
         actor.load_state_dict(state_dict)
-    trajectories = run_episode(env, actor)
-    plot_trajectories(trajectories, (cfg.grid_height, cfg.grid_width))
+    trajectories = run_episode(env, actor, render=render)
+    if not render:
+        plot_trajectories(trajectories, (cfg.grid_height, cfg.grid_width))
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Visualise a match episode")
     parser.add_argument("--model", type=Path, default=None, help="Optional path to an actor checkpoint")
+    parser.add_argument("--render", action="store_true", help="Render the episode in real-time")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    cfg = SoccerEnvConfig()
+    cfg = SoccerEnvConfig(n_players_per_team=11)
     model_path = args.model if args.model is not None and args.model != Path("None") else None
-    visualise(model_path, cfg)
+    visualise(model_path, cfg, args.render)
 
 
 if __name__ == "__main__":
