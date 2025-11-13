@@ -60,7 +60,7 @@ def plot_trajectories(trajectories: Dict[str, List[Tuple[int, int]]], grid_shape
     plt.show()
 
 
-def visualise(model_path: Path | None, cfg: SoccerEnvConfig, render: bool) -> None:
+def visualise(model_path: Path | None, cfg: SoccerEnvConfig, render: bool = True) -> None:
     env = SoccerEnv(cfg)
     actor: PPOAgent | None = None
     if model_path is not None:
@@ -84,6 +84,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    print("Usage: python visualize.py --model <path_to_model> --render")
     args = parse_args()
     cfg = SoccerEnvConfig(n_players_per_team=11)
     model_path = args.model if args.model is not None and args.model != Path("None") else None
