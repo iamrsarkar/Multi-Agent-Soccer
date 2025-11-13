@@ -136,6 +136,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    print("Usage: python visualize.py --model <path_to_model> --render")
     args = parse_args()
 
     model_path = args.model if args.model not in [None, Path("None")] else None
