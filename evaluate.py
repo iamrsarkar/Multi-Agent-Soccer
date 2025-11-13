@@ -71,7 +71,7 @@ def evaluate(model_path: Path, cfg: EvaluationConfig, env_cfg: SoccerEnvConfig) 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Evaluate a trained soccer policy")
     parser.add_argument(
-        "--model", type=Path, default="models/soccer_ppo_final.pth", help="Path to saved actor weights"
+        "--model", type=Path, default="models/soccer_actor_ep500.pth", help="Path to saved actor weights"
     )
     parser.add_argument("--episodes", type=int, default=EvaluationConfig.episodes)
     parser.add_argument("--render", action="store_true")
