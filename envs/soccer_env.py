@@ -9,6 +9,8 @@ import numpy as np
 from gymnasium import spaces
 from pettingzoo import ParallelEnv
 
+from utils.renderer import Renderer
+
 
 Action = int
 Observation = np.ndarray
@@ -77,6 +79,7 @@ class SoccerEnv(ParallelEnv):
         high = np.full(obs_dim, 1.0, dtype=np.float32)
         self._observation_space = spaces.Box(low=low, high=high, dtype=np.float32)
         self._rng = random.Random()
+        self.renderer = None
 
         # Mutable episode state
         self._positions: Dict[str, Tuple[int, int]] = {}
@@ -166,21 +169,9 @@ class SoccerEnv(ParallelEnv):
         return observations, rewards, terminations, truncations, infos
 
     def render(self) -> None:
-        grid = [["." for _ in range(self.config.grid_width)] for _ in range(self.config.grid_height)]
-        goal_left = {row: "|" for row in range(self.config.grid_height)}
-        goal_right = {row: "|" for row in range(self.config.grid_height)}
-
-        for agent, (row, col) in self._positions.items():
-            symbol = "R" if self._team(agent) == "red" else "B"
-            grid[row][col] = symbol
-
-        ball_row, ball_col = self._ball_position
-        grid[ball_row][ball_col] = "o"
-
-        print("Goal L:", " ".join(goal_left[row] for row in range(self.config.grid_height)))
-        for row in grid:
-            print(" ".join(row))
-        print("Goal R:", " ".join(goal_right[row] for row in range(self.config.grid_height)))
+        if self.renderer is None:
+            self.renderer = Renderer(self.config.grid_height, self.config.grid_width)
+        self.renderer.draw(self._positions, self._ball_position, self._ball_owner)
 
     # ------------------------------------------------------------------
     # Internal helpers
