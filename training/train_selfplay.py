@@ -1,6 +1,4 @@
 """Training loop for self-play PPO with a centralized critic."""
-from __future__ import annotations
-
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[1]))
@@ -16,9 +14,9 @@ from torch.utils.tensorboard import SummaryWriter
 
 from agents.centralized_critic import CentralizedCritic, CriticConfig
 from agents.ppo_agent import ActorConfig, PPOAgent
-from agents.selfplay_manager import SelfPlayConfig, SelfPlayManager
+from agents.selfplay_manager import SelfPlayManager
 from configs.defaults import TrainingConfig
-from envs.soccer_env import SoccerEnv, SoccerEnvConfig
+from envs.soccer_env_3v3 import SoccerEnv3v3
 from utils.ppo_buffer import BufferConfig, RolloutBuffer
 
 
@@ -26,7 +24,6 @@ def build_joint_state(
     observations: Dict[str, np.ndarray], agent_order: List[str], obs_dim: int
 ) -> np.ndarray:
     """Concatenate observations into a joint state vector."""
-
     features: List[np.ndarray] = []
     zero = np.zeros(obs_dim, dtype=np.float32)
     for agent in agent_order:
@@ -36,19 +33,14 @@ def build_joint_state(
 
 def train(cfg: TrainingConfig) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    env_cfg = SoccerEnvConfig(
-        grid_height=cfg.grid_height,
-        grid_width=cfg.grid_width,
-        n_players_per_team=cfg.n_players_per_team,
-        max_steps=cfg.max_steps,
-    )
-    env = SoccerEnv(env_cfg)
+    env = SoccerEnv3v3()
 
     possible_agents = env.possible_agents
-    learning_team = "red"
-    learner_ids = [agent for agent in possible_agents if agent.startswith(learning_team)]
-    obs_dim = env.observation_space(possible_agents[0]).shape[0]
-    action_dim = env.action_space(possible_agents[0]).n
+    team0_ids = [agent for agent in possible_agents if int(agent.split('_')[1]) < 3]
+    learner_ids = team0_ids
+
+    obs_dim = env.observation_space[possible_agents[0]].shape[0]
+    action_dim = env.action_space[possible_agents[0]].n
 
     actor_cfg = ActorConfig(
         obs_dim=obs_dim,
@@ -73,20 +65,18 @@ def train(cfg: TrainingConfig) -> None:
         device=device,
     )
     buffer = RolloutBuffer(buffer_cfg, obs_dim=obs_dim, state_dim=critic_cfg.input_dim)
-    selfplay_manager = SelfPlayManager(actor_cfg, SelfPlayConfig(), device=device)
+    selfplay_manager = SelfPlayManager(learner)
 
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     log_dir = Path(cfg.log_dir) / timestamp
     writer = SummaryWriter(log_dir=str(log_dir))
 
-    global_step = 0
     for episode in range(1, cfg.episodes + 1):
         observations, _ = env.reset()
         buffer.clear()
-        opponent_policy = selfplay_manager.sample_opponent()
+        opponent_policy = selfplay_manager.get_opponent_policy()
         episode_reward = 0.0
         episode_steps = 0
-        done_flags = {agent: False for agent in possible_agents}
 
         for t in range(cfg.rollout_length):
             joint_state = build_joint_state(observations, possible_agents, obs_dim)
@@ -96,21 +86,20 @@ def train(cfg: TrainingConfig) -> None:
 
             actions: Dict[str, int] = {}
             log_probs: Dict[str, float] = {}
-            for agent_id in possible_agents:
-                if agent_id not in observations:
-                    continue
-                if agent_id.startswith(learning_team):
+            for agent_id in list(observations.keys()):
+                if agent_id in learner_ids:
                     action, log_prob = learner.select_action(observations[agent_id])
                     actions[agent_id] = action
                     log_probs[agent_id] = log_prob
                 else:
-                    actions[agent_id] = opponent_policy.act(observations[agent_id])
+                    action, _ = opponent_policy.select_action(observations[agent_id], deterministic=True)
+                    actions[agent_id] = action
 
             next_obs, rewards, terminations, truncations, infos = env.step(actions)
-            done_flags = {agent: terminations[agent] or truncations[agent] for agent in possible_agents}
+            done_flags = {agent: terminations.get(agent, False) or truncations.get(agent, False) for agent in possible_agents}
 
             for agent_id in learner_ids:
-                if agent_id in observations:
+                if agent_id in observations and agent_id in actions:
                     buffer.store(
                         observation=observations[agent_id],
                         action=actions[agent_id],
@@ -123,11 +112,9 @@ def train(cfg: TrainingConfig) -> None:
                     episode_reward += rewards.get(agent_id, 0.0)
 
             episode_steps += 1
-
             observations = next_obs
-            global_step += 1
 
-            if all(done_flags.values()):
+            if not env.agents:
                 break
 
         final_state = build_joint_state(observations, possible_agents, obs_dim)
@@ -166,7 +153,8 @@ def train(cfg: TrainingConfig) -> None:
             torch.save(learner.state_dict(), cfg.checkpoint_dir / f"soccer_actor_ep{episode}.pth")
             torch.save(critic.state_dict(), cfg.checkpoint_dir / f"soccer_critic_ep{episode}.pth")
 
-        selfplay_manager.maybe_add_snapshot(learner.state_dict())
+        if episode % 10 == 0:
+            selfplay_manager.update_opponent_policy()
 
         if episode % 10 == 0:
             print(
