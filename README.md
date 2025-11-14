@@ -1,209 +1,214 @@
-# 🎮 Multi-Agent-Soccer(Competitive Reinforcement Learning)
+🎮 Multi-Agent 3v3 Soccer (Competitive Reinforcement Learning)
+📘 Overview
 
-## 📘 Overview
-This project implements **competitive multi-agent reinforcement learning (MARL)** for game-like environments such as **soccer**.  
-Each agent independently learns to **cooperate with teammates** and **compete against opponents** using **self-play** and **policy gradient** methods.
+This project implements a 3 vs 3 competitive multi-agent reinforcement learning (MARL) soccer simulation.
+Each of the six players is controlled by its own learned policy and competes in a dynamic soccer environment using self-play PPO.
 
-The project demonstrates emergent teamwork, strategy formation, and adaptive play dynamics in simulated multi-agent environments.
+The project demonstrates:
 
----
+Emergent teamwork
 
-## 🎯 Objective
-Develop an **autonomous game AI system** in which multiple agents learn to:
-- Compete against each other using reinforcement learning.  
-- Develop cooperative team strategies in a shared environment.  
-- Improve through **self-play** and **league training** (similar to DeepMind’s AlphaStar).  
+Strategy formation
 
----
+Competitive & cooperative behavior
 
-## 🧩 Concept
-Each player or unit is modeled as an **independent agent** that:
-- Observes the game state (e.g., position, velocity, ball location).
-- Chooses an action (move, shoot, pass, defend).
-- Receives a reward based on performance (goals, captures, wins).  
+A live UI match viewer where agents play continuously until manually closed
 
-Agents train via **multi-agent policy gradients**, using **centralized training with decentralized execution** (CTDE).  
+🎯 Objective
 
----
+Build an autonomous 3v3 soccer AI where:
 
-## 🏗️ Environment Setup
+6 independent agents learn to play soccer competitively
 
-### 🔹 Example Environments
-- **⚽ Soccer (2v2)** – agents learn to score and defend.
-- **🚩 Capture-the-Flag** – two teams try to capture the opponent’s flag.
-- **🏓 Pong-Team** – cooperative paddle control to keep the ball in play.
-- **🐾 PettingZoo Envs:** `simple_spread`, `multiwalker`, `pistonball`.
+Agents train via self-play and learn offensive + defensive strategies
 
----
+The trained model can be evaluated in a visual soccer field UI
 
-### 🔹 Observations
-Each agent observes:
-- Its own position, velocity, orientation.
-- Relative positions of teammates, opponents, and objectives (e.g., ball or flag).
-- Global game features (time left, score).
+The UI runs continuously until the user closes the window/terminal
 
-### 🔹 Actions
-Continuous or discrete action space:
-- Move Up / Down / Left / Right
-- Pass / Shoot / Defend / Idle  
+🧩 Concept
+Each agent:
 
-### 🔹 Rewards
-Example reward shaping (Soccer):
-\[
-R_t = R_\text{goal} + R_\text{teamwork} - R_\text{foul} - R_\text{distance}
-\]
-Where:
-- \( R_\text{goal} = +1 \) per goal scored  
-- \( R_\text{teamwork} = +0.1 \) for successful passes  
-- \( R_\text{foul} = -0.5 \) for collisions or going out of bounds  
-- \( R_\text{distance} = -\text{dist(ball, goal)} \) for shaping movement  
+Observes:
 
----
+Its position, velocity
 
-## ⚙️ Algorithms Implemented
+Ball position
 
-| Algorithm | Description | Application |
-|------------|--------------|--------------|
-| **Self-Play PPO** | Agents train by competing with versions of themselves | Core training loop |
-| **League Training** | Multiple policy pools compete and evolve (AlphaStar-style) | Advanced training |
-| **Centralized Critic, Decentralized Actors** | Shared value estimation for cooperative–competitive balance | Stability in multi-agent updates |
-| **Curriculum Learning** | Gradually increases difficulty (1v1 → 2v2) | Robust policy formation |
+Teammates & opponents’ positions
 
----
+Game score and time
 
-## 🧠 Architecture
+Acts:
 
-### Training Flow
+Move Up / Down / Left / Right
+
+Dash / Sprint
+
+Kick / Pass
+
+Idle
+
+Receives rewards based on:
+
+Goals scored
+
+Successful passes
+
+Defensive stops
+
+Ball possession
+
+Fouls or collisions
+
+Training uses:
+
+Centralized critic, decentralized actors (CTDE)
+
+Self-play PPO
+
+Optional league training later
+
+🏟️ 3v3 Soccer Environment Setup
+Environment Features
+
+3 Agents vs 3 Agents
+
+Continuous 2D Soccer Field
+
+Physics-based ball movement
+
+Collision detection
+
+Reward shaping for passes, goals, possession
+
+Built using PettingZoo ParallelEnv API
+
+Observations (per agent)
+
+[x, y, vx, vy] of the agent
+
+[x, y] of ball
+
+[x, y] of teammates
+
+[x, y] of opponents
+
+Actions
+Action	Meaning
+0	Move Up
+1	Move Down
+2	Move Left
+3	Move Right
+4	Dash
+5	Kick
+6	Pass
+7	Idle
+⚙️ Algorithms Implemented
+Algorithm	Description
+Self-Play PPO	Agents train by playing against copies of themselves
+Centralized Critic	One shared critic for stability
+Decentralized Actors	Independent action policies
+Curriculum Learning	Start with simple ball-chasing → full 3v3
+🧠 Training Architecture
+Training Flow
+┌────────────────────────────────────────────────────────┐
+│ Initialize 3v3 soccer environment                      │
+├────────────────────────────────────────────────────────┤
+│ For each episode:                                       │
+│   • All 6 agents observe state                          │
+│   • Agents take actions via PPO policy                  │
+│   • Environment updates physics and ball movement       │
+│   • Rewards assigned (goals, passes, possession, etc.)  │
+│   • Store transitions in replay buffer                  │
+│   • PPO update occurs after rollout length              │
+└────────────────────────────────────────────────────────┘
+
+📁 Directory Structure
+├── envs/
+│   └── soccer_env_3v3.py       # 3v3 soccer simulation
+│
+├── agents/
+│   ├── ppo_agent.py            # PPO decentralized actors
+│   ├── centralized_critic.py   # Shared critic network
+│   └── selfplay_manager.py     # Self-play policy handling
+│
+├── training/
+│   └── train_selfplay.py       # Main training loop
+│
+├── evaluation/
+│   └── evaluate_match.py       # Runs UI 3v3 match viewer
+│
+├── ui/
+│   └── soccer_viewer.py        # Live UI using pygame
+│
+├── results/                    # logs, graphs, training curves
+├── models/                     # PPO saved weights
+└── main.py                     # CLI runner
+
+🎮 Live UI Viewer (3v3 Soccer)
+
+After training, you can visualize the match where:
+
+All 6 agents appear on the field
+
+Ball moves based on physics
+
+Scoreboard updates in real-time
+
+Agents move, pass, defend
+
+The UI stays open until you close the window / kill the terminal
+
+The UI is built using pygame.
+
+🚀 How to Run the Project
+1️⃣ Install Dependencies
+conda create -n marl_soccer python=3.10 -y
+conda activate marl_soccer
+
+pip install torch gymnasium pettingzoo stable-baselines3 pygame tensorboard matplotlib
+
+2️⃣ Train the 3v3 Soccer Agents
+python training/train_selfplay.py \
+    --episodes 5000 \
+    --rollout-length 256 \
+    --log-dir results/tensorboard \
+    --checkpoint-dir models \
+    --save-interval 100
+
+3️⃣ Evaluate the Trained Model (Runs the UI)
+python evaluation/evaluate_match.py --model models/soccer_ppo_final.pth
 
 
-┌───────────────────────────────────────────────┐
-│ Initialize environment (PettingZoo/Unity) │
-├───────────────────────────────────────────────┤
-│ For each episode: │
-│ • Agents observe environment │
-│ • Take actions using current policy │
-│ • Environment updates game state │
-│ • Compute rewards for all agents │
-│ • Store experiences (state, action, reward) │
-│ • Update policies via PPO or League strategy │
-└───────────────────────────────────────────────┘
+➡️ This will open a soccer field UI showing all 6 agents playing.
+➡️ The match continues until you manually close the pygame window or press CTRL+C.
 
-
-### Directory Structure
-
-
-├── envs/ # Game environments (PettingZoo or Unity)
-│ ├── soccer_env.py
-│ ├── capture_flag_env.py
-│ └── pong_team_env.py
-├── agents/ # RL agent implementations
-│ ├── ppo_agent.py
-│ ├── selfplay_manager.py
-│ └── centralized_critic.py
-├── training/ # Training & evaluation loops
-│ ├── train_selfplay.py
-│ └── league_training.py
-├── results/ # Logs, graphs, and replay files
-├── models/ # Trained checkpoints
-└── main.py # Entry point
-
-
----
-
-## 🧩 Frameworks & Libraries
-
-- 🧠 **Reinforcement Learning:** PyTorch, Stable-Baselines3, RLlib  
-- 🕹️ **Simulation Environments:** PettingZoo, Gymnasium, Unity ML-Agents  
-- 📊 **Visualization:** Matplotlib, TensorBoard  
-- ⚙️ **Physics (optional):** PyBullet or Mujoco  
-
----
-
-## 📈 Evaluation Metrics
-
-| Metric | Description |
-|---------|--------------|
-| **Win Rate** | % of matches won by agent/team |
-| **Goal Difference** | Average goals scored − conceded |
-| **Average Reward** | Mean episode reward |
-| **Policy Entropy** | Diversity in learned strategies |
-| **Training Stability** | Reward variance across episodes |
-
----
-
-## 🎮 Experiments
-
-| Experiment | Goal | Setup |
-|-------------|------|-------|
-| 1 | Train 1v1 Self-Play PPO | Baseline |
-| 2 | Add Team Coordination (2v2 Soccer) | Shared rewards |
-| 3 | League Training with Evolving Opponents | AlphaStar-style |
-| 4 | Curriculum Difficulty (Easy → Hard Maps) | Progressive learning |
-
----
-
-## 🚀 How to Run
-
-### 1️⃣ Install Dependencies
-```bash
-conda create -n marl_game python=3.10
-conda activate marl_game
-pip install torch gymnasium pettingzoo stable-baselines3 matplotlib
-
-2️⃣ Train Agent
-python main.py --env soccer --algo selfplay_ppo --episodes 10000
-
-3️⃣ Evaluate Policy
-python evaluate.py --model models/soccer_ppo_final.pth
-
-4️⃣ Visualize Results
-python visualize.py --env soccer
-
-📊 Visualization
-
-Training Curves (Average Reward, Win Rate)
-
-Agent Trajectories
-
-Replay Videos (if using Unity ML-Agents)
-
-🧩 Research Extensions
-
-Add Graph Neural Networks (GNN) for agent communication.
-
-Explore Opponent Modeling (explicit opponent policy prediction).
-
-Combine Self-Play + Imitation Learning (for human-like strategies).
-
-Integrate League ELO rating for opponent matchmaking.
-
+📈 Evaluation Metrics
+Metric	Meaning
+Win Rate	Percent of matches won vs. previous policies
+Goals Scored	Number of goals per episode
+Pass Accuracy	% of completed passes
+Possession Time	Ball control percentage
+Reward Stability	Convergence of PPO training
 📚 References
 
-Silver et al., “Mastering the Game of Go with Deep Neural Networks and Tree Search,” Nature, 2016.
+PettingZoo MARL Framework
 
-Vinyals et al., “Grandmaster Level in StarCraft II using Multi-Agent Reinforcement Learning,” Nature, 2019 (AlphaStar).
+PPO (Schulman et al., 2017)
 
-PettingZoo: Multi-Agent Reinforcement Learning Environment Library.
+AlphaStar (DeepMind, 2019)
 
-Schulman et al., “Proximal Policy Optimization (PPO),” 2017.
+Multi-Agent RL (Lowe et al., MADDPG, 2017)
 
 👨‍💻 Contributors
 
-Ronak Sarkar – Project Lead, Multi-Agent RL Researcher
+Ronak Sarkar – Project Lead (RL + MARL + Simulation)
 
-Group RR – Team Members (Radheshyam Routh, Ronak Sarkar)
-
-MSc Big Data Analytics, RKMVERI (2024–2026)
+Group RR – Supporting Research and Development
 
 🪙 License
 
 MIT License © 2025 Ronak Sarkar
-You are free to use, modify, and distribute this code with proper attribution.
 
-🖼️ Example Simulation Snapshot
-
-
----
-
-Would you like me to **generate this README.md file (downloadable)** or also create the **project folder structure with stub `.py` files** so you can directly initialize it as a GitHub repo (with working placeholders for PettingZoo + PPO integration)?
-
+You may use, modify, and distribute this work with attribution.
